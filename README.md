@@ -1,5 +1,5 @@
 # EP-WOCD-community-detection
->c++ implementation of [EP-WOCD](https://link.springer.com/article/10.1007/s10489-020-01659-7)
+>c++ implementation of [EP-WOCD](https://www.researchgate.net/publication/339837796_A_novel_community_detection_method_based_on_whale_optimization_algorithm_with_evolutionary_population)
 
 EP-WOCD is a [whale optimization algorithm](https://www.sciencedirect.com/science/article/abs/pii/S0965997816300163) with evolutionary population for community detection.
 
