@@ -13,7 +13,7 @@ vector<vector<int>> e;
 vector<int> xBest;
 vector<int> d;
 
-random_device rd;
+random_device rd;   
 mt19937 gen(rd());
 
 double modularity(vector<int> l){
@@ -98,7 +98,7 @@ void randomWalk(vector<int> &l,double k){
         ranPop.push_back(i);
     shuffle(ranPop.begin(),ranPop.end(),gen);   
 
-    vector<vector<int>> P;
+    vector<vector<int>> P;//need optimize
     for (int i=0;i<=lenP-1;i++)
         P.push_back(x[ranPop[i]]);
     
@@ -136,11 +136,11 @@ void mutation(vector<int> &l,double u){
     uniform_real_distribution<double> dis(0,1);
     
     int S = *max_element(l.begin(), l.end());
-
+    vector<int> ltmp;
     for (int i=1;i<=N;i++){
         double x=dis(gen);
         if (x<u){
-            vector<int> ltmp=l;
+            ltmp=l;
             ++S;
             double y=dis(gen);
             if (y<0.5){                
@@ -171,19 +171,20 @@ void boudaryNodeAdjustment(vector<int> &l){
     vector<int> tmpl;
     for (int i=1;i<=N;i++){
         if (isBoundaryNode(l,i)){
-            for (int neighbor:e[i]){
-                tmpl=l;
+            for (int neighbor:e[i])
+                if (l[i]!=l[neighbor]){
+                    tmpl=l;
 
-                l[i]=l[neighbor];
+                    l[i]=l[neighbor];
 
-                if (modularity(l)<modularity(tmpl))
-                    l=tmpl;
-            }
+                    if (modularity(l)<modularity(tmpl))
+                        l=tmpl;
+                }
         }
     }
 }
 void EPD(){
-    if (x.size()>10) return;
+    if (x.size()<10) return;
 
     vector<pair<double, int>> modularityValues;
     for (int i = 1; i <= pop; i++) {
@@ -203,10 +204,10 @@ void EPD(){
     double N_nor=pop-(pop/2+1)+1;
     uniform_real_distribution<double> dis(0,1);
     for (int i=pop/2+1;i<=pop;i++){
-        double C=1-exp(-double(i)/N_nor);
+        double C=1.0-exp(-double(i)/N_nor);
         double rand=dis(gen);
         if (rand<=C){
-            x[i].clear();
+            x.erase(x.begin() + i);
             --pop;
         }
     }
@@ -246,8 +247,8 @@ void EP_WOCD(){
             upadateLocation(x[p],t);
             mutation(x[p],0.3);
             boudaryNodeAdjustment(x[p]);
+            
         }
-        
         for (int i=1;i<=pop;i++)
             if (modularity(x[i])>ans){
                 ans=modularity(x[i]);
