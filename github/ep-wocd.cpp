@@ -40,6 +40,7 @@ void transfer(vector<int> &dk,vector<int> &lk,vector<int> l,int i,int l1,int l2)
 }
 void LAR_rand(vector<vector<int>> &a){
     for (int u=1;u<=N;u++){
+        if (!e[u].size()) continue;
         uniform_int_distribution<int> disv(0,e[u].size()-1);
         int v=e[u][disv(gen)];
         a[u].push_back(v);
