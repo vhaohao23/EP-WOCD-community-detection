@@ -336,6 +336,7 @@ int main(){
     for (int i=1;i<=NE;i++){
         int u,v;
         cin>>u>>v;
+        u++,v++;
         e[u].push_back(v);
         e[v].push_back(u);
         d[u]++,d[v]++;
