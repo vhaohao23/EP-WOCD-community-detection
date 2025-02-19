@@ -346,6 +346,7 @@ void EPD(){
             dk.erase(dk.begin() + i);
             lk.erase(lk.begin() + i);   
             --pop;
+            --i;
         }
     }
     
@@ -407,7 +408,7 @@ int main(){
     clock_t tStart = clock();
 
     // freopen("input.txt","r",stdin);
-    freopen("/home/vhaohao/hao/tmp/thanglm2006/GDPSO/Experimental data/synthetic networks/GN/GN-0.90/network.dat","r",stdin);
+    freopen("/home/vhaohao/hao/nckh/LFRbenmark/LFR-0.50/network.dat","r",stdin);
     cin>>N;
     cin>>NE;
 
@@ -424,12 +425,12 @@ int main(){
         A[u][v]=A[v][u]=true;
     }
 
-    freopen("/home/vhaohao/hao/tmp/thanglm2006/GDPSO/Experimental data/synthetic networks/GN/GN-0.90/community.dat","r",stdin);
+    freopen("/home/vhaohao/hao/nckh/LFRbenmark/LFR-0.50/community.dat","r",stdin);
     groundTruth.push_back(0);
     for (int i=1;i<=N;i++){
         int node,label;
         cin>>node>>label;
-        groundTruth.push_back(label);
+        groundTruth.push_back(label+1);
     }
     
     cout<<groundTruth.size()<<"\n";
