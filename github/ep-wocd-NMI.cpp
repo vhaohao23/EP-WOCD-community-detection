@@ -393,19 +393,12 @@ void EP_WOCD(){
             }
 
     }
-        cout<<ans<<"\n";
+        // cout<<ans<<"\n";
         EPD();        
     }    
     SecondaryCommunityConsolidation(xBest);
     ans=NMI(xBest,groundTruth);
 
-    for (int i=1;i<=pop;i++){
-        SecondaryCommunityConsolidation(x[i]);
-        if (NMI(x[i],groundTruth)>ans){
-            ans=max(ans,NMI(x[i],groundTruth));
-            xBest=x[i];
-        }
-    }
     cout<<ans<<"\n";
     for (int i=1;i<=N;i++)
         cout<<xBest[i]<<" ";
