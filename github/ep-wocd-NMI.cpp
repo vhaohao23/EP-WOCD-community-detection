@@ -379,7 +379,7 @@ void EP_WOCD(){
             ans=NMI(x[i],groundTruth);
             xBest=x[i];
         }
-    cout<<ans<<"\n";
+    int cntStable=0;
     for (int t=1;t<=T;t++){
         for (int p=1;p<=pop;p++){
             updateLocation(x[p],t,dk[p],lk[p]);
@@ -387,28 +387,28 @@ void EP_WOCD(){
             boudaryNodeAdjustment(x[p],dk[p],lk[p]);
             
         }
+        bool isStable=1;
         for (int i=1;i<=pop;i++){
             if (NMI(x[i],groundTruth)>ans){
+                isStable=0,cntStable=0;
                 ans=NMI(x[i],groundTruth);
                 xBest=x[i];
             }
+        }
 
-    }
-        // cout<<ans<<"\n";
-        EPD();        
+        cntStable+=isStable;
+        if (cntStable>=5) break;
+        EPD();  
+        // cout<<ans<<" "<<t<<"\n";      
     }    
     SecondaryCommunityConsolidation(xBest);
     ans=NMI(xBest,groundTruth);
 
     cout<<ans<<"\n";
-    for (int i=1;i<=N;i++)
-        cout<<xBest[i]<<" ";
 }
 int main(){
-    clock_t tStart = clock();
-
     // freopen("input.txt","r",stdin);
-    freopen("/home/vhaohao/hao/nckh/LFRbenmark/LFR-0.50/network.dat","r",stdin);
+    freopen("D:\\Hao\\nckh\\LFRbenchmark\\LFR-0.75\\network.dat", "r", stdin);
     cin>>N;
     cin>>NE;
 
@@ -425,7 +425,7 @@ int main(){
         A[u][v]=A[v][u]=true;
     }
 
-    freopen("/home/vhaohao/hao/nckh/LFRbenmark/LFR-0.50/community.dat","r",stdin);
+    freopen("D:\\Hao\\nckh\\LFRbenchmark\\LFR-0.75\\community.dat", "r", stdin);
     groundTruth.push_back(0);
     for (int i=1;i<=N;i++){
         int node,label;
@@ -433,9 +433,8 @@ int main(){
         groundTruth.push_back(label+1);
     }
     
-    cout<<groundTruth.size()<<"\n";
+    // cout<<groundTruth.size()<<"\n";
     EP_WOCD();
 
 
-    printf("\nTime taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 }
