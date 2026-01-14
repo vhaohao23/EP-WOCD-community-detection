@@ -28,16 +28,36 @@ double modularity(vector<int> dk,vector<int> lk){
     return Q;
 }
 
-void transfer(vector<int> &dk,vector<int> &lk,vector<int> l,int i,int l1,int l2){
-    dk[l1]-=d[i];
-    dk[l2]+=d[i];
-    for (int v:e[i]){
-        if (l1==l[v])
-            --lk[l1];
-        if (l2==l[v])
-            ++lk[l2];
+void caldklk(vector<int> &l,vector<int> &dk,vector<int> &lk){
+    int s=*max_element(l.begin(),l.end());
+    dk.assign(N+1,0); lk.assign(N+1,0);
+                          
+
+    for (int u=1;u<=N;u++){
+        dk[l[u]]+=d[u];
+         
+        for (int v:e[u])
+            if (l[u]==l[v]&&u<v){
+                ++lk[l[u]];
+            }
     }
+}  
+
+void standardization(vector<int> &l,vector<int> &dk,vector<int> &lk){
+    map<int,int> mp;
+    int cnt=0;
+    for (int i=1;i<=N;i++){
+        if (mp.find(l[i])==mp.end()){
+            ++cnt;
+            mp[l[i]]=cnt;
+        }
+        l[i]=mp[l[i]];
+    }
+
+    caldklk(l,dk,lk);
 }
+
+
 void LAR_rand(vector<vector<int>> &a){
     for (int u=1;u<=N;u++){
         if (!e[u].size()) continue;
@@ -102,9 +122,9 @@ void movingToPrey(vector<int> &l,vector<int> &dk,vector<int> &lk,double k){
     shuffle(pos.begin(),pos.end(),gen);
 
     for (int i=0;i<=int(k)-1;i++){
-        transfer(dk,lk,l,pos[i],l[pos[i]],xBest[pos[i]]);
         l[pos[i]]=xBest[pos[i]];
     }
+    caldklk(l,dk,lk);
 }
 
 void randomWalk(vector<int> &l,vector<int> &dk,vector<int> &lk,double k){
@@ -129,10 +149,11 @@ void randomWalk(vector<int> &l,vector<int> &dk,vector<int> &lk,double k){
 
         while (kCommma--){
             --k;
-            transfer(dk,lk,l,randNode[k],l[randNode[k]],P[i][randNode[k]]);
             l[randNode[k]]=P[i][randNode[k]];
         }
     }
+    caldklk(l,dk,lk);
+    
 }
 
 void encirlingThePrey(vector<int>&l,vector<int> &dk,vector<int> &lk,double r){
@@ -145,9 +166,9 @@ void encirlingThePrey(vector<int>&l,vector<int> &dk,vector<int> &lk,double r){
     shuffle(pos.begin(),pos.end(),gen);
 
     for (int i=0;i<=int(k)-1;i++){
-        transfer(dk,lk,l,pos[i],l[pos[i]],xBest[pos[i]]);
         l[pos[i]]=xBest[pos[i]];
     }
+    caldklk(l,dk,lk);
 }
 
 void mutation(vector<int> &l,vector<int> &dk,vector<int> &lk,double u){
@@ -167,20 +188,22 @@ void mutation(vector<int> &l,vector<int> &dk,vector<int> &lk,double u){
             ++S;
             double y=dis(gen);
             if (y<0.5){
-                transfer(dk,lk,l,i,l[i],S);                
+                // transfer(dk,lk,l,i,l[i],S);                
                 l[i]=S;
                 
             }
             else{
-                transfer(dk,lk,l,i,l[i],S);
+                // transfer(dk,lk,l,i,l[i],S);
                 l[i]=S;
                 
 
                 for (int neigbor:e[i]){
-                    transfer(dk,lk,l,neigbor,l[neigbor],S);
+                    // transfer(dk,lk,l,neigbor,l[neigbor],S);
                     l[neigbor]=S;
                 }
             }
+
+            caldklk(l,dk,lk);
             
             if (modularity(dk,lk)<modularity(dktmp,lktmp)){
                 --S;
@@ -207,6 +230,9 @@ void boudaryNodeAdjustment(vector<int> &l,vector<int> &dk,vector<int> &lk){
     int s=*max_element(l.begin(),l.end());
     bool dd[s+1]={};
     
+    double inv_4NE2 = 1.0 / (4.0 * double(NE) * double(NE));
+    double inv_NE = 1.0 / double(NE);
+
     for (int i=1;i<=N;i++){
         if (isBoundaryNode(l,i)){
             dd[l[i]]=true;
@@ -218,7 +244,15 @@ void boudaryNodeAdjustment(vector<int> &l,vector<int> &dk,vector<int> &lk){
                     dktmp=dk;
                     lktmp=lk;
 
-                    transfer(dk,lk,l,i,l[i],l[neighbor]);
+
+                    dk[l[i]]-=d[i];
+                    dk[l[neighbor]]+=d[i];
+                    for (int v:e[i]){
+                        if (l[i]==l[v])
+                            --lk[l[i]];
+                        if (l[neighbor]==l[v])
+                            ++lk[l[neighbor]];
+                    }
                     l[i]=l[neighbor];
 
                     if (modularity(dk,lk)<modularity(dktmp,lktmp)){
@@ -291,6 +325,8 @@ void updateLocation(vector<int> &l,int t,vector<int> &dk,vector<int> &lk){
     }
 }
 
+
+
 void EP_WOCD(){
     initialization();
     double ans=0;
@@ -304,7 +340,9 @@ void EP_WOCD(){
         for (int p=1;p<=pop;p++){
             updateLocation(x[p],t,dk[p],lk[p]);
             mutation(x[p],dk[p],lk[p],0.3);
+            standardization(x[p],dk[p],lk[p]);
             boudaryNodeAdjustment(x[p],dk[p],lk[p]);
+            standardization(x[p],dk[p],lk[p]);
             
         }
         for (int i=1;i<=pop;i++){
@@ -325,7 +363,7 @@ void EP_WOCD(){
 int main(){
     clock_t tStart = clock();
 
-    freopen("input.txt","r",stdin);
+    freopen("/home/vhaohao/hao/nckh/dataset-community/dolphins.txt","r",stdin);
 
     cin>>N;
     cin>>NE;
@@ -336,7 +374,7 @@ int main(){
     for (int i=1;i<=NE;i++){
         int u,v;
         cin>>u>>v;
-        u++,v++;
+        // u++,v++;
         e[u].push_back(v);
         e[v].push_back(u);
         d[u]++,d[v]++;
