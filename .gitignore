@@ -1,4 +1,7 @@
-*.vscode
-*.exe
+# Ignore executable files
 *
+!*.*
 !*/
+
+.vscode/
+*.exe
