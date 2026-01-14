@@ -171,47 +171,33 @@ void encirlingThePrey(vector<int>&l,vector<int> &dk,vector<int> &lk,double r){
     caldklk(l,dk,lk);
 }
 
-void mutation(vector<int> &l,vector<int> &dk,vector<int> &lk,double u){
-    uniform_real_distribution<double> dis(0,1);
+void mutation(vector<int> &l,vector<int> &dk,vector<int> &lk,double& totalMutation){
+    uniform_int_distribution<int> disn(1,N);
+    int u=disn(gen);
     
-    int S = *max_element(l.begin(), l.end());
-    vector<int> ltmp;
-    vector<int> dktmp;
-    vector<int> lktmp;
-    for (int i=1;i<=N;i++){
-        double x=dis(gen);
-        if (x<u){
-            ltmp=l; 
-            dktmp=dk;
-            lktmp=lk;
+    uniform_real_distribution<double> disType(0.0,1.0);
+    double type=disType(gen);
 
-            ++S;
-            double y=dis(gen);
-            if (y<0.5){
-                // transfer(dk,lk,l,i,l[i],S);                
-                l[i]=S;
-                
-            }
-            else{
-                // transfer(dk,lk,l,i,l[i],S);
-                l[i]=S;
-                
+    int S= *max_element(l.begin()+1,l.end());
+    ++S;
 
-                for (int neigbor:e[i]){
-                    // transfer(dk,lk,l,neigbor,l[neigbor],S);
-                    l[neigbor]=S;
+    if (type<0.5){
+        double nodeMuProb=0.5; // probability of mutating each node in the same community
+        uniform_real_distribution<double> disProb(0.0,1.0);
+        for (int i=1;i<=N;i++)
+            if (l[i]==l[u]){
+                double randProb=disProb(gen);
+                if (randProb<nodeMuProb){
+                    l[i]=S;
                 }
             }
-
-            caldklk(l,dk,lk);
-            
-            if (modularity(dk,lk)<modularity(dktmp,lktmp)){
-                --S;
-                l=ltmp;
-                dk=dktmp;
-                lk=lktmp;
+    }
+    else {
+        l[u]=S;
+        for (int v:e[u]){
+            if (l[v]==l[u]){
+                l[v]=S;
             }
-            
         }
     }
 }
@@ -328,6 +314,7 @@ void updateLocation(vector<int> &l,int t,vector<int> &dk,vector<int> &lk){
 
 
 void EP_WOCD(){
+    uniform_real_distribution<double> dis(0,1);
     initialization();
     double ans=0;
     for (int i=1;i<=pop;i++)
@@ -335,15 +322,28 @@ void EP_WOCD(){
             ans=modularity(dk[i],lk[i]);
             xBest=x[i];
         }
+    
+    int preriodn=5;
+    vector<double> mutationProb(pop, dis(gen));
+    vector<double> totalMutation(pop, 0);
+    vector<double> successMutation(pop, 0);
+    
+    vector<vector<int>> dkTmp=dk;
+    vector<vector<int>> lkTmp=lk;
 
     for (int t=1;t<=T;t++){
         for (int p=1;p<=pop;p++){
             updateLocation(x[p],t,dk[p],lk[p]);
-            mutation(x[p],dk[p],lk[p],0.3);
+            if (dis(gen)<mutationProb[p]){
+                mutation(x[p],dk[p],lk[p],totalMutation[p]);
+            }
             standardization(x[p],dk[p],lk[p]);
             boudaryNodeAdjustment(x[p],dk[p],lk[p]);
             standardization(x[p],dk[p],lk[p]);
             
+            if (modularity(dk[p],lk[p])>modularity(dkTmp[p],lkTmp[p])){
+                successMutation[p]++;
+            }
         }
         for (int i=1;i<=pop;i++){
             if (modularity(dk[i],lk[i])>ans){
@@ -353,17 +353,37 @@ void EP_WOCD(){
 
             
         }
-        EPD();        
+        EPD();     
+        if (t%preriodn==0){
+            //do sth
+            for (int p=1;p<=pop;p++){
+                if (totalMutation[p]){
+                    double c=0.9;
+                    cout<<successMutation[p]<<" "<<totalMutation[p]<<"\n";
+                    if (successMutation[p]/totalMutation[p]>0.2){
+                        mutationProb[p]=mutationProb[p]/c;
+                    }
+                    else if (successMutation[p]/totalMutation[p]<0.2){
+                        mutationProb[p]=mutationProb[p]*c;
+                    }
+                }
+
+                totalMutation[p]=0;
+                successMutation[p]=0;
+                dkTmp=dk;
+                lkTmp=lk;
+            }
+        }
     }    
 
     cout<<ans<<"\n";
-    for (int i=1;i<=N;i++)
-        cout<<xBest[i]<<" ";
+    // for (int i=1;i<=N;i++)
+        // cout<<xBest[i]<<" ";
 }
 int main(){
     clock_t tStart = clock();
 
-    freopen("/home/vhaohao/hao/nckh/dataset-community/dolphins.txt","r",stdin);
+    freopen("/home/vhaohao/hao/nckh/dataset-community/polbooks.txt","r",stdin);
 
     cin>>N;
     cin>>NE;
@@ -383,5 +403,5 @@ int main(){
 
     EP_WOCD();
 
-    printf("\nTime taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
+    // printf("\nTime taken: %.2fs\n", (double)(clock() - tStart)/CLOCKS_PER_SEC);
 }
