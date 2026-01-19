@@ -1,5 +1,12 @@
 #include<bits/stdc++.h>
 using namespace std;
+
+struct Whale{
+    vector<int> l;
+    vector<int> dk;
+    vector<int> lk;
+};
+
 int pop=100;
 const int T=100;
 int N;
@@ -8,12 +15,10 @@ const double p=1.0;
 const double lenP=5.0;
 
 vector<vector<bool>> A;
-vector<vector<int>> x(pop+1);
 vector<vector<int>> e;
 vector<int> xBest;
 vector<int> d;
-vector<vector<int>> dk(pop+1);
-vector<vector<int>> lk(pop+1);
+vector<Whale> whales(pop+1);
 
 random_device rd;   
 mt19937 gen(rd());
@@ -97,18 +102,18 @@ void initialization(){
     for (int p=1;p<=pop;p++){
         vector<vector<int>> a(N+1);
         LAR_rand(a);
-        x[p]=decoding(a);         
+        whales[p].l=decoding(a);         
         
-        s=*max_element(x[p].begin(),x[p].end());
-        dk[p].resize(N+1,0);
-        lk[p].resize(N+1,0);                            
+        s=*max_element(whales[p].l.begin(),whales[p].l.end());
+        whales[p].dk.resize(N+1,0);
+        whales[p].lk.resize(N+1,0);                            
         
         for (int u=1;u<=N;u++){
-            dk[p][x[p][u]]+=d[u];
+            whales[p].dk[whales[p].l[u]]+=d[u];
              
             for (int v:e[u])
-                if (x[p][u]==x[p][v]&&u<v){
-                    ++lk[p][x[p][u]];
+                if (whales[p].l[u]==whales[p].l[v]&&u<v){
+                    ++whales[p].lk[whales[p].l[u]];
                 }
         }
     }    
@@ -135,7 +140,7 @@ void randomWalk(vector<int> &l,vector<int> &dk,vector<int> &lk,double k){
 
     vector<vector<int>> P;
     for (int i=0;i<=lenP-1;i++)
-        P.push_back(x[ranPop[i]]);
+        P.push_back(whales[ranPop[i]].l);
     
 
     vector<int> randNode;
@@ -254,28 +259,22 @@ void boudaryNodeAdjustment(vector<int> &l,vector<int> &dk,vector<int> &lk){
     }
 }
 void EPD(){
-    if (x.size()<10) return;
+    if (whales.size()<10) return;
 
     vector<pair<double, int>> modularityValues;
     for (int i = 1; i <= pop; i++) {
-        double modValue = modularity(dk[i],lk[i]);  
+        double modValue = modularity(whales[i].dk,whales[i].lk);  
         modularityValues.push_back({modValue, i});
     }
 
     sort(modularityValues.begin(), modularityValues.end());
 
-    vector<vector<int>> sortedX(pop + 1);
-    vector<vector<int>> sorteddk(pop + 1);
-    vector<vector<int>> sortedlk(pop + 1); 
+    vector<Whale> sortedWhales(pop + 1);
     for (int i = 0; i < pop; i++) {
-        sortedX[i + 1] = x[modularityValues[i].second];
-        sorteddk[i + 1] = dk[modularityValues[i].second];
-        sortedlk[i + 1] = lk[modularityValues[i].second];
+        sortedWhales[i + 1] = whales[modularityValues[i].second];
     }
 
-    x=sortedX;
-    dk=sorteddk;
-    lk=sortedlk;
+    whales=sortedWhales;
 
     double N_nor=pop-(pop/2+1)+1;
     uniform_real_distribution<double> dis(0,1);
@@ -283,9 +282,7 @@ void EPD(){
         double C=1.0-exp(-double(i)/N_nor);
         double rand=dis(gen);
         if (rand<=C){
-            x.erase(x.begin() + i);
-            dk.erase(dk.begin() + i);
-            lk.erase(lk.begin() + i);   
+            whales.erase(whales.begin() + i);
             --pop;
         }
     }
@@ -318,9 +315,9 @@ void EP_WOCD(){
     initialization();
     double ans=0;
     for (int i=1;i<=pop;i++)
-        if (modularity(dk[i],lk[i])>ans){
-            ans=modularity(dk[i],lk[i]);
-            xBest=x[i];
+        if (modularity(whales[i].dk,whales[i].lk)>ans){
+            ans=modularity(whales[i].dk,whales[i].lk);
+            xBest=whales[i].l;
         }
     
     int preriodn=5;
@@ -328,27 +325,26 @@ void EP_WOCD(){
     vector<double> totalMutation(pop, 0);
     vector<double> successMutation(pop, 0);
     
-    vector<vector<int>> dkTmp=dk;
-    vector<vector<int>> lkTmp=lk;
+    vector<Whale> whalesTmp=whales;
 
     for (int t=1;t<=T;t++){
         for (int p=1;p<=pop;p++){
-            updateLocation(x[p],t,dk[p],lk[p]);
+            updateLocation(whales[p].l,t,whales[p].dk,whales[p].lk);
             if (dis(gen)<mutationProb[p]){
-                mutation(x[p],dk[p],lk[p],totalMutation[p]);
+                mutation(whales[p].l,whales[p].dk,whales[p].lk,totalMutation[p]);
             }
-            standardization(x[p],dk[p],lk[p]);
-            boudaryNodeAdjustment(x[p],dk[p],lk[p]);
-            standardization(x[p],dk[p],lk[p]);
+            standardization(whales[p].l,whales[p].dk,whales[p].lk);
+            boudaryNodeAdjustment(whales[p].l,whales[p].dk,whales[p].lk);
+            standardization(whales[p].l,whales[p].dk,whales[p].lk);
             
-            if (modularity(dk[p],lk[p])>modularity(dkTmp[p],lkTmp[p])){
+            if (modularity(whales[p].dk,whales[p].lk)>modularity(whalesTmp[p].dk,whalesTmp[p].lk)){
                 successMutation[p]++;
             }
         }
         for (int i=1;i<=pop;i++){
-            if (modularity(dk[i],lk[i])>ans){
-                ans=modularity(dk[i],lk[i]);
-                xBest=x[i];
+            if (modularity(whales[i].dk,whales[i].lk)>ans){
+                ans=modularity(whales[i].dk,whales[i].lk);
+                xBest=whales[i].l;
             }
 
             
@@ -370,8 +366,7 @@ void EP_WOCD(){
 
                 totalMutation[p]=0;
                 successMutation[p]=0;
-                dkTmp=dk;
-                lkTmp=lk;
+                whalesTmp=whales;
             }
         }
     }    
@@ -382,8 +377,8 @@ void EP_WOCD(){
 }
 int main(){
     clock_t tStart = clock();
+    freopen("/home/vhaohao/hao/nckh/dataset-community/karate.txt","r",stdin);
 
-    freopen("/home/vhaohao/hao/nckh/dataset-community/polbooks.txt","r",stdin);
 
     cin>>N;
     cin>>NE;
